@@ -1,0 +1,984 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Bold;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 Menlo-Italic;
+}
+{\colortbl;\red255\green255\blue255;\red115\green158\blue202;\red204\green204\blue204;\red183\green136\blue211;
+\red102\green151\blue104;\red158\green158\blue158;\red193\green170\blue108;\red202\green197\blue128;\red192\green192\blue192;
+\red177\green155\blue155;\red238\green204\blue100;}
+{\*\expandedcolortbl;;\csgenericrgb\c45098\c61961\c79216;\csgenericrgb\c80000\c80000\c80000;\csgenericrgb\c71765\c53333\c82745;
+\csgenericrgb\c40000\c59216\c40784;\csgenericrgb\c61961\c61961\c61961;\csgenericrgb\c75686\c66667\c42353;\csgenericrgb\c79216\c77255\c50196;\csgenericrgb\c75294\c75294\c75294;
+\csgenericrgb\c69412\c60784\c60784;\csgenericrgb\c93333\c80000\c39216;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\b\fs24 \cf2 CREATE
+\f1\b0 \cf3  
+\f0\b \cf2 TABLE
+\f1\b0 \cf3  \cf4 segmentacao_dataset\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf0 \
+\
+
+\f0\b \cf2 WITH
+\f1\b0 \cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- FEATURES \'97 RFM\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 recency\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (\cf0 \
+\cf3             
+\f0\b \cf2 EXTRACT
+\f1\b0 \cf3 (\cf6 EPOCH\cf3  
+\f0\b \cf2 FROM
+\f1\b0 \cf3  (\cf8 '2017-10-01'\cf3 ::
+\f0\b \cf7 timestamp
+\f1\b0 \cf3  - 
+\f0\b \cf7 MAX
+\f1\b0 \cf3 (\cf6 order_purchase_timestamp\cf3 ))) / \cf9 86400\cf0 \
+\cf3         , \cf9 0\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 recency_days\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 frequency\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf7 COUNT
+\f1\b0 \cf3 (
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  \cf6 order_id\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 total_orders\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 monetary\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 SUM
+\f1\b0 \cf3 (\cf6 p\cf3 .\cf6 payment_value\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 total_spent\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf3  \cf6 fo\cf0 \
+\cf3     
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  (\cf0 \
+\cf3         
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  \cf6 order_id\cf3 , 
+\f0\b \cf7 SUM
+\f1\b0 \cf3 (\cf6 payment_value\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 payment_value\cf0 \
+\cf3         
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_order_payments\cf0 \
+\cf3         
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 order_id\cf0 \
+\cf3     ) \cf6 p\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_id\cf3  = \cf6 p\cf3 .\cf6 order_id\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- FEATURES \'97 comportamento\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 avg_review\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         \cf5 -- One-hot das 3 categorias de satisfa\'e7\'e3o\cf0 \
+\cf3        
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 rev\cf3 .\cf6 review_score\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) <= \cf9 2\cf0 \
+\cf3              
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 review_insatisfeito\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 rev\cf3 .\cf6 review_score\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) > \cf9 2\cf0 \
+\cf3               
+\f0\b \cf2 AND
+\f1\b0 \cf3  
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 rev\cf3 .\cf6 review_score\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) < \cf9 4\cf0 \
+\cf3              
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 review_neutro\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 rev\cf3 .\cf6 review_score\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) >= \cf9 4\cf0 \
+\cf3              
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 review_satisfeito\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf3  \cf6 fo\cf0 \
+\cf3     
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  (\cf0 \
+\cf3         
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  \cf6 order_id\cf3 , 
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 review_score\cf3 ::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 review_score\cf0 \
+\cf3         
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_order_reviews\cf0 \
+\cf3         
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 review_creation_date\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3         
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 order_id\cf0 \
+\cf3     ) \cf6 rev\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_id\cf3  = \cf6 rev\cf3 .\cf6 order_id\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 avg_delay\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf0 \
+\cf3             
+\f0\b \cf2 EXTRACT
+\f1\b0 \cf3 (\cf6 EPOCH\cf3  
+\f0\b \cf2 FROM
+\f1\b0 \cf3  (\cf0 \
+\cf3                 \cf6 order_delivered_customer_date\cf3  - \cf6 order_estimated_delivery_date\cf0 \
+\cf3             )) / \cf9 86400\cf0 \
+\cf3         )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 avg_delivery_delay_days\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_delivered_customer_date\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_delivered_customer_date\cf3  
+\f0\b \cf2 IS
+\f1\b0 \cf3  
+\f0\b \cf2 NOT
+\f1\b0 \cf3  
+\f0\b \cf2 NULL
+\f1\b0 \cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 avg_items\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf7 ROUND
+\f1\b0 \cf3 (
+\f0\b \cf7 AVG
+\f1\b0 \cf3 (\cf6 it\cf3 .\cf6 item_count\cf3 )::
+\f0\b \cf7 numeric
+\f1\b0 \cf3 , \cf9 2\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 avg_items_per_order\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf3  \cf6 fo\cf0 \
+\cf3     
+\f0\b \cf2 LEFT
+\f1\b0 \cf3  
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  (\cf0 \
+\cf3         
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  \cf6 order_id\cf3 , 
+\f0\b \cf7 COUNT
+\f1\b0 \cf3 (\cf6 order_item_id\cf3 ) 
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 item_count\cf0 \
+\cf3         
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_order_items\cf0 \
+\cf3         
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 order_id\cf0 \
+\cf3     ) \cf6 it\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_id\cf3  = \cf6 it\cf3 .\cf6 order_id\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- FEATURES \'97 categoria (one-hot encoding: top-5 + outros)\cf0 \
+\cf5 -- Top-5 cobre ~40% dos clientes\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 clientes_base\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     \cf5 -- Lista de TODOS os clientes do per\'edodo de treino (\'e2ncora)\cf0 \
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 category_per_customer\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     \cf5 -- Categoria principal de cada cliente (mais comprada, desempate alfab\'e9tico)\cf0 \
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  (\cf6 fo\cf3 .\cf6 customer_unique_id\cf3 )\cf0 \
+\cf3         \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         \cf6 dp\cf3 .\cf6 product_category_name\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 top_category\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf3  \cf6 fo\cf0 \
+\cf3     
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf6 fact_order_items\cf3  \cf6 foi\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_id\cf3  = \cf6 foi\cf3 .\cf6 order_id\cf0 \
+\cf3     
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf6 dim_products\cf3  \cf6 dp\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 foi\cf3 .\cf6 product_id\cf3  = \cf6 dp\cf3 .\cf6 product_id\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 dp\cf3 .\cf6 product_category_name\cf3  
+\f0\b \cf2 IS
+\f1\b0 \cf3  
+\f0\b \cf2 NOT
+\f1\b0 \cf3  
+\f0\b \cf2 NULL
+\f1\b0 \cf0 \
+\cf3     
+\f0\b \cf2 GROUP
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 , \cf6 dp\cf3 .\cf6 product_category_name\cf0 \
+\cf3     
+\f0\b \cf2 ORDER
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 , 
+\f0\b \cf7 COUNT
+\f1\b0 \cf3 (*) 
+\f0\b \cf2 DESC
+\f1\b0 \cf3 , \cf6 dp\cf3 .\cf6 product_category_name\cf3  
+\f0\b \cf2 ASC
+\f1\b0 \cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 category_encoding\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     \cf5 -- One-Hot Encoding: 5 categorias top + outros\cf0 \
+\cf3     \cf5 -- Clientes sem categoria identificada caem em cat_outros = 1\cf0 \
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 cb\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  = \cf8 'cama_mesa_banho'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_cama_mesa_banho\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  = \cf8 'esporte_lazer'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_esporte_lazer\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  = \cf8 'beleza_saude'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_beleza_saude\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  = \cf8 'moveis_decoracao'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_moveis_decoracao\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  = \cf8 'informatica_acessorios'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_informatica_acessorios\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  \cf0 \
+\cf3             
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  
+\f0\b \cf2 IS
+\f1\b0 \cf3  
+\f0\b \cf2 NULL
+\f1\b0 \cf3  \cf0 \
+\cf3               
+\f0\b \cf2 OR
+\f1\b0 \cf3  \cf6 cpc\cf3 .\cf6 top_category\cf3  
+\f0\b \cf2 NOT
+\f1\b0 \cf3  
+\f0\b \cf2 IN
+\f1\b0 \cf3  (\cf0 \
+\cf3                 \cf8 'cama_mesa_banho'\cf3 , \cf8 'esporte_lazer'\cf3 , \cf8 'beleza_saude'\cf3 , \cf0 \
+\cf3                 \cf8 'moveis_decoracao'\cf3 , \cf8 'informatica_acessorios'\cf0 \
+\cf3               )\cf0 \
+\cf3             
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf0 \
+\cf3         
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 cat_outros\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 clientes_base\cf3  \cf6 cb\cf0 \
+\cf3     
+\f0\b \cf2 LEFT
+\f1\b0 \cf3  
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf6 category_per_customer\cf3  \cf6 cpc\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 cb\cf3 .\cf6 customer_unique_id\cf3  = \cf6 cpc\cf3 .\cf6 customer_unique_id\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- FEATURES \'97 estado (one-hot encoding: top-3 + outros)\cf0 \
+\cf5 -- Top-3 cobre ~64% dos clientes\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 state_per_customer\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  (\cf6 fo\cf3 .\cf6 customer_unique_id\cf3 )\cf0 \
+\cf3         \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         \cf6 dc\cf3 .\cf6 customer_state\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf3  \cf6 fo\cf0 \
+\cf3     
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf6 dim_customers\cf3  \cf6 dc\cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_id\cf3  = \cf6 dc\cf3 .\cf6 customer_id\cf0 \
+\cf3     
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3     
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3     
+\f0\b \cf2 ORDER
+\f1\b0 \cf3  
+\f0\b \cf2 BY
+\f1\b0 \cf3  \cf6 fo\cf3 .\cf6 customer_unique_id\cf3 , \cf6 fo\cf3 .\cf6 order_purchase_timestamp\cf3  
+\f0\b \cf2 DESC
+\f1\b0 \cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 state_encoding\cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 customer_state\cf3  = \cf8 'SP'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 state_sp\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 customer_state\cf3  = \cf8 'RJ'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 state_rj\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 customer_state\cf3  = \cf8 'MG'\cf3  
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf3  
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 state_mg\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf3  \cf0 \
+\cf3             
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 customer_state\cf3  
+\f0\b \cf2 NOT
+\f1\b0 \cf3  
+\f0\b \cf2 IN
+\f1\b0 \cf3  (\cf8 'SP'\cf3 , \cf8 'RJ'\cf3 , \cf8 'MG'\cf3 )\cf0 \
+\cf3             
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf0 \
+\cf3         
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 state_outros\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 state_per_customer\cf0 \
+\cf3 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- TARGET\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf2 target
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\cf3         \cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3         
+\f0\b \cf2 CASE
+\f1\b0 \cf0 \
+\cf3             
+\f0\b \cf2 WHEN
+\f1\b0 \cf3  \cf6 customer_unique_id\cf3  
+\f0\b \cf2 IN
+\f1\b0 \cf3  (\cf0 \
+\cf3                 
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3                 
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3                 
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3                 
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-10-01'\cf0 \
+\cf3             )\cf0 \
+\cf3             
+\f0\b \cf2 THEN
+\f1\b0 \cf3  \cf9 1\cf3  
+\f0\b \cf2 ELSE
+\f1\b0 \cf3  \cf9 0\cf0 \
+\cf3         
+\f0\b \cf2 END
+\f1\b0 \cf3  
+\f0\b \cf2 AS
+\f1\b0 \cf3  \cf6 target_repurchase\cf0 \
+\cf3     
+\f0\b \cf2 FROM
+\f1\b0 \cf3  (\cf0 \
+\cf3         
+\f0\b \cf2 SELECT
+\f1\b0 \cf3  
+\f0\b \cf2 DISTINCT
+\f1\b0 \cf3  \cf6 customer_unique_id\cf0 \
+\cf3         
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf6 fact_orders\cf0 \
+\cf3         
+\f0\b \cf2 WHERE
+\f1\b0 \cf3  \cf6 order_status\cf3  = \cf8 'delivered'\cf0 \
+\cf3         
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  >= \cf8 '2017-01-01'\cf0 \
+\cf3         
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2017-10-01'\cf0 \
+\cf3         
+\f0\b \cf2 AND
+\f1\b0 \cf3  \cf6 order_purchase_timestamp\cf3  < \cf8 '2018-01-01'\cf3  \cf5 -- Janela de 3 meses (Target)\cf0 \
+\cf3     ) \cf6 clientes_treino\cf0 \
+\cf3 )\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 -- ===========================================================================\cf0 \
+\cf5 -- JUN\'c7\'c3O FINAL \'97 s\'f3 linhas completas (INNER JOIN elimina NULLs)\cf0 \
+\cf5 -- ===========================================================================\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf2 SELECT
+\f1\b0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf3     
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 recency_days\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 f
+\f1\i0 \cf3 .\cf6 total_orders\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 m
+\f1\i0 \cf3 .\cf6 total_spent\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 rev
+\f1\i0 \cf3 .\cf6 review_insatisfeito\cf3 ,    \cf5 -- Flag 0 ou 1\cf0 \
+\cf3     
+\f2\i \cf4 rev
+\f1\i0 \cf3 .\cf6 review_neutro\cf3 ,          \cf5 -- Flag 0 ou 1\cf0 \
+\cf3     
+\f2\i \cf4 rev
+\f1\i0 \cf3 .\cf6 review_satisfeito\cf3 ,      \cf5 -- Flag 0 ou 1\cf0 \
+\cf3     
+\f2\i \cf4 del
+\f1\i0 \cf3 .\cf6 avg_delivery_delay_days\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 it
+\f1\i0 \cf3 .\cf6 avg_items_per_order\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_cama_mesa_banho\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_esporte_lazer\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_beleza_saude\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_moveis_decoracao\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_informatica_acessorios\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 cat_outros\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 st
+\f1\i0 \cf3 .\cf6 state_sp\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 st
+\f1\i0 \cf3 .\cf6 state_rj\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 st
+\f1\i0 \cf3 .\cf6 state_mg\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 st
+\f1\i0 \cf3 .\cf6 state_outros\cf3 ,\cf0 \
+\cf3     
+\f2\i \cf4 t
+\f1\i0 \cf3 .\cf6 target_repurchase\cf3  \cf5 -- apagar depois\cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf2 FROM
+\f1\b0 \cf3  \cf10 \ul \ulc10 recency\cf3 \ulnone  
+\f2\i \cf4 r
+\f1\i0 \cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 frequency\cf3 \ulnone  
+\f2\i \cf4 f
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 f
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 monetary\cf3 \ulnone  
+\f2\i \cf4 m
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 m
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 avg_review\cf3 \ulnone  
+\f2\i \cf4 rev
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 rev
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 avg_delay\cf3 \ulnone  
+\f2\i \cf4 del
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 del
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 avg_items\cf3 \ulnone  
+\f2\i \cf4 it
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 it
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 category_encoding\cf3 \ulnone  
+\f2\i \cf4 cat
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 cat
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 state_encoding\cf3 \ulnone  
+\f2\i \cf4 st
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 st
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf0 \
+
+\f0\b \cf2 JOIN
+\f1\b0 \cf3  \cf10 \ul \ulc10 target\cf3 \ulnone  
+\f2\i \cf4 t
+\f1\i0 \cf3  
+\f0\b \cf2 ON
+\f1\b0 \cf3  
+\f2\i \cf4 r
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf3  = 
+\f2\i \cf4 t
+\f1\i0 \cf3 .\cf6 customer_unique_id\cf11 ;\cf3  \cf5 -- apagar depois}

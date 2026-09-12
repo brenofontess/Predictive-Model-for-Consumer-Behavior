@@ -1,0 +1,555 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;\f1\fnil\fcharset0 Menlo-Bold;\f2\fnil\fcharset0 Menlo-Italic;
+}
+{\colortbl;\red255\green255\blue255;\red102\green151\blue104;\red115\green158\blue202;\red204\green204\blue204;
+\red193\green170\blue108;\red0\green184\blue184;\red183\green136\blue211;\red238\green204\blue100;\red202\green197\blue128;
+\red158\green158\blue158;\red192\green192\blue192;}
+{\*\expandedcolortbl;;\csgenericrgb\c40000\c59216\c40784;\csgenericrgb\c45098\c61961\c79216;\csgenericrgb\c80000\c80000\c80000;
+\csgenericrgb\c75686\c66667\c42353;\csgenericrgb\c0\c72157\c72157;\csgenericrgb\c71765\c53333\c82745;\csgenericrgb\c93333\c80000\c39216;\csgenericrgb\c79216\c77255\c50196;
+\csgenericrgb\c61961\c61961\c61961;\csgenericrgb\c75294\c75294\c75294;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf2 -- ANALISE EXPLORATORIA DOS DADOS GERAIS\cf0 \
+\cf2 -- ======================================================================\cf0 \
+\
+\
+\cf2 -- Descobrir quando come\'e7am e quando acabam os dados\cf0 \
+\cf2 -- Importante para decidir a cutoff date\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf5 MIN
+\f0\b0 \cf4 (\cf6 order_purchase_timestamp\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 data_mais_antiga
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 MAX
+\f0\b0 \cf4 (\cf6 order_purchase_timestamp\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 data_mais_recente
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf8 ;\cf0 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Tamanho do dataset\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_pedidos
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (
+\f1\b \cf3 DISTINCT
+\f0\b0 \cf4  \cf6 customer_unique_id\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_clientes_unicos
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (
+\f1\b \cf3 DISTINCT
+\f0\b0 \cf4  \cf6 customer_id\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_customer_id
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Quantos pedidos est\'e3o em cada status\cf0 \
+\cf2 -- Vamos s\'f3 usar os 'delivered' nos modelos\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     \cf6 order_status\cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf0 \
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 order_status\cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 total\cf4  
+\f1\b \cf3 DESC
+\f0\b0 \cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Quantos clientes compram 1 vez, 2 vezes, 3+ vezes\cf0 \
+\cf2 -- Indicador da taxa natural de recompra\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f2\i \cf6 pedidos_por_cliente
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 quantos_clientes
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\cf4         \cf6 customer_unique_id\cf4 ,\cf0 \
+\cf4         
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (
+\f1\b \cf3 DISTINCT
+\f0\b0 \cf4  \cf6 order_id\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 pedidos_por_cliente
+\f0\i0 \cf0 \
+\cf4     
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf0 \
+\cf4     
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf6 order_status\cf4  = \cf9 'delivered'\cf0 \
+\cf4     
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 customer_unique_id\cf0 \
+\cf4 ) 
+\f2\i \cf7 sub
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  
+\f2\i \cf6 pedidos_por_cliente
+\f0\i0 \cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  
+\f2\i \cf6 pedidos_por_cliente
+\f0\i0 \cf8 ;\cf0 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Volume de pedidos ao longo do tempo\cf0 \
+\cf2 -- Ajuda a escolher o per\'edodo de treino\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf5 DATE_TRUNC
+\f0\b0 \cf4 (\cf9 'month'\cf4 , \cf6 order_purchase_timestamp\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 mes
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_pedidos
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf0 \
+
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf6 order_status\cf4  = \cf9 'delivered'\cf0 \
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 mes\cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 mes\cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Como se distribuem os valores pagos\cf0 \
+\cf2 -- Detecta outliers\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf5 MIN
+\f0\b0 \cf4 (\cf6 payment_value\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 minimo
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 ROUND
+\f0\b0 \cf4 (
+\f1\b \cf3 AVG
+\f0\b0 \cf4 (\cf10 payment_value\cf4 )::
+\f1\b \cf3 numeric
+\f0\b0 \cf4 , \cf11 2\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 media
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 MAX
+\f0\b0 \cf4 (\cf6 payment_value\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 maximo
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 PERCENTILE_CONT
+\f0\b0 \cf4 (\cf11 0.5\cf4 ) 
+\f1\b \cf3 WITHIN
+\f0\b0 \cf4  
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  (
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 payment_value\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 mediana
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_order_payments\cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Como os clientes avaliam os pedidos\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     \cf6 review_score\cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_order_reviews\cf0 \
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 review_score\cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 review_score\cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Categorias mais vendidas\cf0 \
+\cf2 -- Decide se faz sentido o top-5 que pens\'e1mos\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f2\i \cf7 dp
+\f0\i0 \cf4 .\cf6 product_category_name\cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_vendas
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_order_items\cf4  
+\f2\i \cf7 foi
+\f0\i0 \cf0 \
+
+\f1\b \cf3 JOIN
+\f0\b0 \cf4  \cf7 dim_products\cf4  
+\f2\i \cf7 dp
+\f0\i0 \cf4  
+\f1\b \cf3 ON
+\f0\b0 \cf4  
+\f2\i \cf7 foi
+\f0\i0 \cf4 .\cf6 product_id\cf4  = 
+\f2\i \cf7 dp
+\f0\i0 \cf4 .\cf6 product_id\cf0 \
+
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  
+\f2\i \cf7 dp
+\f0\i0 \cf4 .\cf6 product_category_name\cf4  
+\f1\b \cf3 IS
+\f0\b0 \cf4  
+\f1\b \cf3 NOT
+\f0\b0 \cf4  
+\f1\b \cf3 NULL
+\f0\b0 \cf0 \
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  
+\f2\i \cf7 dp
+\f0\i0 \cf4 .\cf6 product_category_name\cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 total_vendas\cf4  
+\f1\b \cf3 DESC
+\f0\b0 \cf0 \
+
+\f1\b \cf3 LIMIT
+\f0\b0 \cf4  \cf11 10\cf8 ;\cf0 \
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- Volume de pedidos por m\'eas desde o in\'edcio\cf0 \
+\cf2 -- Confirma se 2016 tem realmente pouco volume\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     
+\f1\b \cf5 DATE_TRUNC
+\f0\b0 \cf4 (\cf9 'month'\cf4 , \cf6 order_purchase_timestamp\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 mes
+\f0\i0 \cf4 ,\cf0 \
+\cf4     
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_pedidos
+\f0\i0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf0 \
+
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf6 order_status\cf4  = \cf9 'delivered'\cf0 \
+
+\f1\b \cf3 GROUP
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 mes\cf0 \
+
+\f1\b \cf3 ORDER
+\f0\b0 \cf4  
+\f1\b \cf3 BY
+\f0\b0 \cf4  \cf6 mes\cf8 ;\cf0 \
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf2 -- TAXA DE RECOMPRA NATURAL\cf0 \
+\cf2 -- ======================================================================\cf0 \
+\
+\
+\cf2 -- Clientes que compraram no per\'edodo de treino e voltaram ap\'f3s a cutoff\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 WITH
+\f0\b0 \cf4  \cf10 clientes_treino\cf4  
+\f1\b \cf3 AS
+\f0\b0 \cf4  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     \cf2 -- Clientes \'fanicos que compraram no per\'edodo de treino (Jan-Set 2017)\cf0 \
+\cf4     
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf3 DISTINCT
+\f0\b0 \cf4  \cf6 customer_unique_id\cf0 \
+\cf4     
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 fact_orders\cf0 \
+\cf4     
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf6 order_status\cf4               = \cf9 'delivered'\cf0 \
+\cf4     
+\f1\b \cf3 AND
+\f0\b0 \cf4    \cf6 order_purchase_timestamp\cf4  >= \cf9 '2017-01-01'\cf0 \
+\cf4     
+\f1\b \cf3 AND
+\f0\b0 \cf4    \cf6 order_purchase_timestamp\cf4  <  \cf9 '2017-10-01'\cf0 \
+\cf4 ),\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf10 clientes_recompra\cf4  
+\f1\b \cf3 AS
+\f0\b0 \cf4  (\cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     \cf2 -- Clientes \'fanicos que compraram ap\'f3s a cutoff\cf0 \
+\cf4     
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf3 DISTINCT
+\f0\b0 \cf4  \cf10 customer_unique_id\cf0 \
+\cf4     
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 fact_orders\cf0 \
+\cf4     
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf10 order_status\cf4               = \cf9 'delivered'\cf0 \
+\cf4     
+\f1\b \cf3 AND
+\f0\b0 \cf4    \cf10 order_purchase_timestamp\cf4  >= \cf9 '2017-10-01'\cf0 \
+\cf4 )\cf0 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\b \cf3 SELECT
+\f0\b0 \cf0 \
+\pard\pardeftab720\partightenfactor0
+\cf4     \cf2 -- Total de clientes no per\'edodo de treino\cf0 \
+\cf4     (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf7 clientes_treino\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  
+\f2\i \cf6 total_clientes_treino
+\f0\i0 \cf4 ,\cf0 \
+\cf4     \cf0 \
+\cf4     \cf2 -- Quantos desses voltaram a comprar\cf0 \
+\cf4     (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 clientes_treino\cf4  \cf10 ct\cf4  \cf0 \
+\cf4      
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf10 ct\cf4 .\cf10 customer_unique_id\cf4  
+\f1\b \cf3 IN
+\f0\b0 \cf4  (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf10 customer_unique_id\cf4  
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 clientes_recompra\cf4 )\cf0 \
+\cf4     ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  \cf10 clientes_que_recompraram\cf4 ,\cf0 \
+\cf4     \cf0 \
+\cf4     \cf2 -- Percentagem de recompra\cf0 \
+\cf4     \cf10 ROUND\cf4 (\cf0 \
+\cf4         (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 clientes_treino\cf4  \cf10 ct\cf4  \cf0 \
+\cf4          
+\f1\b \cf3 WHERE
+\f0\b0 \cf4  \cf10 ct\cf4 .\cf10 customer_unique_id\cf4  
+\f1\b \cf3 IN
+\f0\b0 \cf4  (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  \cf10 customer_unique_id\cf4  
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 clientes_recompra\cf4 )\cf0 \
+\cf4         )::
+\f1\b \cf3 numeric
+\f0\b0 \cf4  \cf0 \
+\cf4         / \cf0 \
+\cf4         (
+\f1\b \cf3 SELECT
+\f0\b0 \cf4  
+\f1\b \cf5 COUNT
+\f0\b0 \cf4 (*) 
+\f1\b \cf3 FROM
+\f0\b0 \cf4  \cf10 clientes_treino\cf4 ) * \cf11 100\cf0 \
+\cf4     , \cf11 2\cf4 ) 
+\f1\b \cf3 AS
+\f0\b0 \cf4  \cf10 pct_recompra\cf8 ;}
